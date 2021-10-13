@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #new Env('BILIBILI-HELPER');
 
+
 echo "Version: v1.0"
 latest=$(curl -s https://api.github.com/repos/graytoowolf/HELPER-PRE/releases/latest)
 latest_VERSION=$(echo $latest | jq '.tag_name' | sed 's/v\|"//g')
