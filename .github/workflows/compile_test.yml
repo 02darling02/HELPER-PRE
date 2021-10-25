@@ -19,6 +19,19 @@ jobs:
         with:
           java-version: 1.8
 
+      - name: Read tag_main
+        id: tag_main
+        uses: ashley-taylor/read-json-property-action@v1.0
+        with:
+          path: ./src/main/resources/release.json
+          property: tag_main
+      - name: Read tag_latest
+        id: tag_latest
+        uses: ashley-taylor/read-json-property-action@v1.0
+        with:
+          path: ./src/main/resources/release.json
+          property: tag_latest
+
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
@@ -28,4 +41,25 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: compile with Maven
-        run: mvn -B compile --file pom.xml
+        run: mvn -B package --file pom.xml -Dmaven.test.skip=true
+
+      - name: ZIP files
+        run: |
+          mv -f ./target/BILIBILI-HELPER-${{steps.tag_main.outputs.value}}.jar BILIBILI-HELPER-v${{steps.tag_latest.outputs.value}}.jar
+          zip BILIBILI-HELPER\ v${{steps.tag_latest.outputs.value}}.zip BILIBILI-HELPER-v${{steps.tag_latest.outputs.value}}.jar
+          cp ./src/main/resources/config.json ./
+          zip BILIBILI-HELPER\ v${{steps.tag_latest.outputs.value}}.zip config.json
+          zip BILIBILI-HELPER\ v${{steps.tag_latest.outputs.value}}.zip -r docs/
+          zip BILIBILI-HELPER\ v${{steps.tag_latest.outputs.value}}.zip LICENSE
+
+
+      - name: qiniusc
+        uses: luochongfei/up2qn@master
+        with:
+          bucket: bilihelperpre # 空间名称，按实际情况填写
+          zone: 华南 # 存储区域，按实际情况填写 备注1
+          access_key: ${{ secrets.AK }} # 七牛云 AccessKey 备注2
+          secret_key: ${{ secrets.SK }} # 七牛云 SecretKey 备注2
+          local_dir: BILIBILI-HELPER # 本地文件夹
+          local_exclude: "**/node_modules/**" # 要排除的内容，要符合 glob 格式
+          target_dir: / # 要上传到七牛云中的文件夹
